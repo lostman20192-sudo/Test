@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotHost — Discord Bot Hosting Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blurple: #5865F2;
+  --blurple-dark: #4752C4;
+  --blurple-light: #7983F5;
+  --green: #57F287;
+  --red: #ED4245;
+  --yellow: #FEE75C;
+  --bg: #0e0f13;
+  --surface: #16181f;
+  --surface2: #1e2029;
+  --surface3: #252836;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8eaf0;
+  --muted: #8a8fa8;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif; min-height: 100vh; }
+
+.layout { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo-icon { width: 32px; height: 32px; background: var(--blurple); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-icon svg { width: 18px; height: 18px; fill: white; }
+.logo-name { font-size: 15px; font-weight: 700; color: white; }
+.logo-badge { font-size: 9px; background: var(--blurple); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px; }
+
+.nav-section { padding: 0 12px; margin-bottom: 8px; }
+.nav-label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--muted); transition: all 0.15s; margin-bottom: 2px; user-select: none;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(88,101,242,0.15); color: var(--blurple-light); }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-count { font-size: 11px; background: var(--blurple); color: white; padding: 1px 7px; border-radius: 10px; margin-left: auto; font-weight: 600; }
+.nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blurple); margin-left: auto; box-shadow: 0 0 5px var(--blurple); }
+
+.sidebar-footer { margin-top: auto; padding: 16px 12px 0; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.user-chip:hover { background: var(--surface2); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--blurple), #9b59b6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; }
+.user-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.user-plan { font-size: 11px; color: var(--blurple-light); }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10;
+}
+.page-title { font-size: 16px; font-weight: 600; color: white; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: 'Sora', sans-serif;
+}
+.btn-primary { background: var(--blurple); color: white; }
+.btn-primary:hover { background: var(--blurple-dark); }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface3); }
+.btn svg { width: 14px; height: 14px; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.content { padding: 28px; flex: 1; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+@media(max-width:900px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+.stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 26px; font-weight: 700; color: white; letter-spacing: -1px; }
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.txt-green { color: var(--green); }
+.txt-red { color: var(--red); }
+.txt-yellow { color: var(--yellow); }
+.txt-blue { color: var(--blurple-light); }
+
+/* SECTION */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 15px; font-weight: 600; color: white; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-green { background: rgba(87,242,135,0.1); color: var(--green); }
+.badge-gray { background: var(--surface3); color: var(--muted); }
+.badge-blue { background: rgba(88,101,242,0.15); color: var(--blurple-light); }
+.section-actions { display: flex; gap: 8px; }
+
+/* TABLE */
+.bots-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+.table-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 110px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.table-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 110px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.1s; }
+.table-row:last-child { border-bottom: none; }
+.table-row:hover { background: var(--surface2); }
+.td { font-size: 13px; color: var(--text); }
+
+.bot-info { display: flex; align-items: center; gap: 10px; }
+.bot-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+.bot-name { font-size: 13px; font-weight: 500; color: white; }
+.bot-id { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+.status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.status-online { background: rgba(87,242,135,0.1); color: var(--green); }
+.status-offline { background: rgba(237,66,69,0.1); color: var(--red); }
+.status-starting { background: rgba(254,231,92,0.1); color: var(--yellow); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.status-online .status-dot { box-shadow: 0 0 5px var(--green); }
+
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.action-btns { display: flex; gap: 5px; }
+.icon-btn {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: all 0.15s;
+}
+.icon-btn:hover { background: var(--surface3); color: var(--text); border-color: rgba(255,255,255,0.15); }
+.icon-btn svg { width: 13px; height: 13px; }
+
+/* BOTTOM GRID */
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:800px){ .bottom-grid { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card-title { font-size: 14px; font-weight: 600; color: white; margin-bottom: 16px; }
+
+/* CHART */
+.chart-bars { display: flex; align-items: flex-end; gap: 5px; height: 80px; }
+.bar { flex: 1; border-radius: 4px 4px 0 0; background: var(--blurple); opacity: 0.65; transition: opacity 0.2s, transform 0.1s; cursor: pointer; }
+.bar:hover { opacity: 1; transform: scaleY(1.02); transform-origin: bottom; }
+.bar.highlight { opacity: 1; }
+.chart-labels { display: flex; gap: 5px; margin-top: 8px; }
+.chart-label { flex: 1; text-align: center; font-size: 10px; color: var(--muted); }
+
+/* RESOURCES */
+.resource { margin-bottom: 14px; }
+.resource:last-child { margin-bottom: 0; }
+.resource-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.resource-name { font-size: 13px; color: var(--text); }
+.resource-val { font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.resource-bar { height: 6px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+.resource-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+
+/* LOGS */
+.log-entry { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.log-entry:last-child { border-bottom: none; }
+.log-time { color: var(--muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; font-size: 11px; padding-top: 1px; }
+.log-msg { color: var(--text); line-height: 1.4; }
+.log-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 4px; }
+.log-ok { background: rgba(87,242,135,0.12); color: var(--green); }
+.log-info { background: rgba(88,101,242,0.15); color: var(--blurple-light); }
+.log-warn { background: rgba(254,231,92,0.1); color: var(--yellow); }
+.log-err { background: rgba(237,66,69,0.1); color: var(--red); }
+
+/* DEPLOY CARD */
+.deploy-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.deploy-input {
+  width: 100%; background: var(--surface3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; color: var(--text); font-size: 12px; font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.15s;
+}
+.deploy-input:focus { border-color: var(--blurple); }
+.deploy-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.select-field {
+  flex: 1; background: var(--surface3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; color: var(--text); font-size: 13px; font-family: 'Sora', sans-serif; outline: none; cursor: pointer; transition: border-color 0.15s;
+}
+.select-field:focus { border-color: var(--blurple); }
+
+/* ALERT TOAST */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px; font-size: 13px; color: var(--text); z-index: 100;
+  transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 300px;
+  display: flex; align-items: center; gap: 10px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 0.7s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.003.022.015.04.034.05a19.908 19.908 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      </div>
+      <div>
+        <span class="logo-name">BotHost</span><span class="logo-badge">PRO</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="setPage('Dashboard', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="setPage('My Bots', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        My Bots
+        <span class="nav-count">4</span>
+      </div>
+      <div class="nav-item" onclick="setPage('Deploy', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 7-9 7-9-7z"/><path d="M3 17l9 4 9-4"/></svg>
+        Deploy
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Monitoring</div>
+      <div class="nav-item" onclick="setPage('Logs', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Logs
+        <span class="nav-dot"></span>
+      </div>
+      <div class="nav-item" onclick="setPage('Metrics', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Metrics
+      </div>
+      <div class="nav-item" onclick="setPage('Alerts', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Alerts
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Config</div>
+      <div class="nav-item" onclick="setPage('Env Variables', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>
+        Env Variables
+      </div>
+      <div class="nav-item" onclick="setPage('Domains', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Domains
+      </div>
+      <div class="nav-item" onclick="setPage('Billing', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Billing
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">AK</div>
+        <div>
+          <div class="user-name">alexk</div>
+          <div class="user-plan">Pro Plan · 4/5 bots</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="simulateRefresh()">
+          <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary" onclick="deployBot()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Bot
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(88,101,242,0.12)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5865F2" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="stat-label">Active Bots</div>
+          <div class="stat-value" id="statBots">4</div>
+          <div class="stat-sub txt-green">↑ 1 added this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(87,242,135,0.1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#57F287" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-label">Total Servers</div>
+          <div class="stat-value" id="statServers">2,847</div>
+          <div class="stat-sub txt-green">↑ 12.3% this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(254,231,92,0.1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FEE75C" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value">99.9%</div>
+          <div class="stat-sub">Last 30 days average</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(88,101,242,0.1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7983F5" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="stat-label">Commands / Day</div>
+          <div class="stat-value">18.4k</div>
+          <div class="stat-sub txt-green">↑ 6.1% vs yesterday</div>
+        </div>
+      </div>
+
+      <!-- BOTS TABLE -->
+      <div class="section-header">
+        <div class="section-title">Your Bots</div>
+        <div class="section-actions">
+          <span class="badge badge-green">3 Online</span>
+          <span class="badge" style="background:rgba(254,231,92,0.1);color:var(--yellow)">1 Starting</span>
+          <span class="badge badge-gray">0 Offline</span>
+        </div>
+      </div>
+
+      <div class="bots-table">
+        <div class="table-header">
+          <div class="th">Bot</div>
+          <div class="th">Status</div>
+          <div class="th">Servers</div>
+          <div class="th">CPU</div>
+          <div class="th">RAM</div>
+          <div class="th">Actions</div>
+        </div>
+
+        <div class="table-row" id="row-0">
+          <div class="td">
+            <div class="bot-info">
+              <div class="bot-avatar" style="background:linear-gradient(135deg,#5865F2,#9b59b6)">M</div>
+              <div>
+                <div class="bot-name">MusicBot Pro</div>
+                <div class="bot-id">1047382910284</div>
+              </div>
+            </div>
+          </div>
+          <div class="td"><span class="status-pill status-online" id="status-0"><span class="status-dot"></span>Online</span></div>
+          <div class="td mono txt-blue">1,204</div>
+          <div class="td mono txt-green">14%</div>
+          <div class="td mono txt-green">312 MB</div>
+          <div class="td"><div class="action-btns">
+            <button class="icon-btn" title="Restart" onclick="restartBot(0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+            <button class="icon-btn" title="View logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+            <button class="icon-btn" title="Stop" style="color:var(--red)" id="toggleBtn-0" onclick="toggleBot(0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+          </div></div>
+        </div>
+
+        <div class="table-row" id="row-1">
+          <div class="td">
+            <div class="bot-info">
+              <div class="bot-avatar" style="background:linear-gradient(135deg,#1abc9c,#2ecc71)">M</div>
+              <div>
+                <div class="bot-name">ModGuard</div>
+                <div class="bot-id">8837261049283</div>
+              </div>
+            </div>
+          </div>
+          <div class="td"><span class="status-pill status-online" id="status-1"><span class="status-dot"></span>Online</span></div>
+          <div class="td mono txt-blue">847</div>
+          <div class="td mono txt-green">8%</div>
+          <div class="td mono txt-green">128 MB</div>
+          <div class="td"><div class="action-btns">
+            <button class="icon-btn" title="Restart" onclick="restartBot(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+            <button class="icon-btn" title="View logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+            <button class="icon-btn" title="Stop" style="color:var(--red)" id="toggleBtn-1" onclick="toggleBot(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+          </div></div>
+        </div>
+
+        <div class="table-row" id="row-2">
+          <div class="td">
+            <div class="bot-info">
+              <div class="bot-avatar" style="background:linear-gradient(135deg,#e67e22,#e74c3c)">W</div>
+              <div>
+                <div class="bot-name">WelcomeBot</div>
+                <div class="bot-id">3920183746253</div>
+              </div>
+            </div>
+          </div>
+          <div class="td"><span class="status-pill status-online" id="status-2"><span class="status-dot"></span>Online</span></div>
+          <div class="td mono txt-blue">392</div>
+          <div class="td mono txt-yellow">41%</div>
+          <div class="td mono txt-green">256 MB</div>
+          <div class="td"><div class="action-btns">
+            <button class="icon-btn" title="Restart" onclick="restartBot(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+            <button class="icon-btn" title="View logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+            <button class="icon-btn" title="Stop" style="color:var(--red)" id="toggleBtn-2" onclick="toggleBot(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+          </div></div>
+        </div>
+
+        <div class="table-row" id="row-3">
+          <div class="td">
+            <div class="bot-info">
+              <div class="bot-avatar" style="background:linear-gradient(135deg,#3498db,#5865F2)">E</div>
+              <div>
+                <div class="bot-name">EconBot</div>
+                <div class="bot-id">6612837401928</div>
+              </div>
+            </div>
+          </div>
+          <div class="td"><span class="status-pill status-starting" id="status-3"><span class="status-dot"></span>Starting</span></div>
+          <div class="td mono txt-blue">404</div>
+          <div class="td mono txt-yellow">22%</div>
+          <div class="td mono txt-green">190 MB</div>
+          <div class="td"><div class="action-btns">
+            <button class="icon-btn" title="Restart" onclick="restartBot(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+            <button class="icon-btn" title="View logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+            <button class="icon-btn" title="Stop" style="color:var(--red)" id="toggleBtn-3" onclick="toggleBot(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- BOTTOM GRID -->
+      <div class="bottom-grid">
+
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-title">Commands This Week</div>
+          <div class="chart-bars">
+            <div class="bar" style="height:45%" title="Monday: 8,302"></div>
+            <div class="bar" style="height:62%" title="Tuesday: 11,418"></div>
+            <div class="bar" style="height:38%" title="Wednesday: 7,003"></div>
+            <div class="bar" style="height:80%" title="Thursday: 14,761"></div>
+            <div class="bar" style="height:55%" title="Friday: 10,143"></div>
+            <div class="bar highlight" style="height:95%;background:var(--blurple-light)" title="Saturday: 17,521"></div>
+            <div class="bar" style="height:72%" title="Sunday: 13,288"></div>
+          </div>
+          <div class="chart-labels">
+            <div class="chart-label">Mon</div>
+            <div class="chart-label">Tue</div>
+            <div class="chart-label">Wed</div>
+            <div class="chart-label">Thu</div>
+            <div class="chart-label">Fri</div>
+            <div class="chart-label">Sat</div>
+            <div class="chart-label">Sun</div>
+          </div>
+        </div>
+
+        <!-- Resources -->
+        <div class="card">
+          <div class="card-title">Resource Usage</div>
+          <div class="resource">
+            <div class="resource-header">
+              <span class="resource-name">CPU</span>
+              <span class="resource-val txt-blue">21%</span>
+            </div>
+            <div class="resource-bar"><div class="resource-fill" style="width:21%;background:var(--blurple)"></div></div>
+          </div>
+          <div class="resource">
+            <div class="resource-header">
+              <span class="resource-name">RAM</span>
+              <span class="resource-val txt-green">886 MB / 2 GB</span>
+            </div>
+            <div class="resource-bar"><div class="resource-fill" style="width:44%;background:var(--green)"></div></div>
+          </div>
+          <div class="resource">
+            <div class="resource-header">
+              <span class="resource-name">Storage</span>
+              <span class="resource-val txt-yellow">3.1 GB / 10 GB</span>
+            </div>
+            <div class="resource-bar"><div class="resource-fill" style="width:31%;background:var(--yellow)"></div></div>
+          </div>
+          <div class="resource">
+            <div class="resource-header">
+              <span class="resource-name">Bandwidth</span>
+              <span class="resource-val txt-blue">1.2 GB / month</span>
+            </div>
+            <div class="resource-bar"><div class="resource-fill" style="width:12%;background:var(--blurple)"></div></div>
+          </div>
+          <div class="resource">
+            <div class="resource-header">
+              <span class="resource-name">Disk I/O</span>
+              <span class="resource-val txt-green">Low</span>
+            </div>
+            <div class="resource-bar"><div class="resource-fill" style="width:7%;background:var(--green)"></div></div>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="card">
+          <div class="card-title">Recent Logs</div>
+          <div class="log-entry">
+            <span class="log-time">14:32:01</span>
+            <span class="log-msg"><span class="log-tag log-ok">OK</span>MusicBot connected to gateway</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">14:31:44</span>
+            <span class="log-msg"><span class="log-tag log-info">INFO</span>EconBot process starting up...</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">14:28:12</span>
+            <span class="log-msg"><span class="log-tag log-warn">WARN</span>WelcomeBot hit rate limit — retrying in 3s</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">14:19:07</span>
+            <span class="log-msg"><span class="log-tag log-ok">OK</span>ModGuard: Scanned 48 messages</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">14:13:55</span>
+            <span class="log-msg"><span class="log-tag log-err">ERR</span>EconBot: DB connection timeout (retry 1/3)</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">14:11:30</span>
+            <span class="log-msg"><span class="log-tag log-info">INFO</span>Autoscale check: all bots healthy</span>
+          </div>
+        </div>
+
+        <!-- Quick Deploy -->
+        <div class="card">
+          <div class="card-title">Quick Deploy</div>
+          <div style="margin-bottom:12px">
+            <div class="deploy-label">Bot Token</div>
+            <input class="deploy-input" type="password" placeholder="MTxxxxxx.Xxxxxx.xxxxxxxxxxxxxxxxxx" />
+          </div>
+          <div style="margin-bottom:12px">
+            <div class="deploy-label">Git Repository (optional)</div>
+            <input class="deploy-input" type="text" placeholder="https://github.com/you/my-bot.git" style="font-family:'Sora',sans-serif;font-size:13px" />
+          </div>
+          <div class="deploy-row">
+            <div style="flex:1">
+              <div class="deploy-label">Runtime</div>
+              <select class="select-field">
+                <option>Node.js 20</option>
+                <option>Python 3.11</option>
+                <option>Deno 1.38</option>
+                <option>Bun 1.0</option>
+              </select>
+            </div>
+            <div style="flex:1">
+              <div class="deploy-label">Region</div>
+              <select class="select-field">
+                <option>US East (N. Virginia)</option>
+                <option>US West (Oregon)</option>
+                <option>EU West (Ireland)</option>
+                <option>Asia Pacific (Singapore)</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="deployBtn" style="width:100%;justify-content:center;padding:10px;font-size:14px" onclick="handleDeploy()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l9 7-9 7-9-7z"/><path d="M3 17l9 4 9-4"/></svg>
+            Deploy Bot
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot" id="toastDot"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastDot').style.background = color || '#5865F2';
+  document.getElementById('toastDot').style.boxShadow = '0 0 6px ' + (color || '#5865F2');
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setPage(name, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pageTitle').textContent = name;
+}
+
+const botStates = [true, true, true, false]; // true = online/running
+
+function restartBot(i) {
+  const pill = document.getElementById('status-' + i);
+  pill.className = 'status-pill status-starting';
+  pill.innerHTML = '<span class="status-dot"></span>Restarting...';
+  showToast('Restarting bot...', '#FEE75C');
+  setTimeout(() => {
+    pill.className = 'status-pill status-online';
+    pill.innerHTML = '<span class="status-dot"></span>Online';
+    botStates[i] = true;
+    showToast('Bot restarted successfully', '#57F287');
+  }, 2200);
+}
+
+function toggleBot(i) {
+  const pill = document.getElementById('status-' + i);
+  const btn = document.getElementById('toggleBtn-' + i);
+  if(botStates[i]) {
+    pill.className = 'status-pill status-offline';
+    pill.innerHTML = '<span class="status-dot"></span>Offline';
+    botStates[i] = false;
+    btn.style.color = '#57F287';
+    btn.title = 'Start';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+    showToast('Bot stopped', '#ED4245');
+  } else {
+    pill.className = 'status-pill status-starting';
+    pill.innerHTML = '<span class="status-dot"></span>Starting';
+    btn.style.color = '#8a8fa8';
+    btn.disabled = true;
+    showToast('Starting bot...', '#FEE75C');
+    setTimeout(() => {
+      pill.className = 'status-pill status-online';
+      pill.innerHTML = '<span class="status-dot"></span>Online';
+      botStates[i] = true;
+      btn.style.color = '#ED4245';
+      btn.title = 'Stop';
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>';
+      showToast('Bot is online!', '#57F287');
+    }, 2500);
+  }
+}
+
+function simulateRefresh() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spinning');
+  setTimeout(() => {
+    icon.classList.remove('spinning');
+    const s = document.getElementById('statServers');
+    s.textContent = (2800 + Math.floor(Math.random()*100)).toLocaleString();
+    showToast('Dashboard refreshed', '#5865F2');
+  }, 800);
+}
+
+function deployBot() {
+  setPage('Deploy', document.querySelector('.nav-item:nth-child(3)'));
+}
+
+function handleDeploy() {
+  const btn = document.getElementById('deployBtn');
+  btn.disabled = true;
+  btn.innerHTML = 'Deploying...';
+  showToast('Starting deployment...', '#5865F2');
+  setTimeout(() => {
+    showToast('Building container...', '#FEE75C');
+  }, 900);
+  setTimeout(() => {
+    btn.innerHTML = '✓ Deployed!';
+    btn.style.background = '#57F287';
+    btn.style.color = '#0e0f13';
+    showToast('Bot deployed successfully!', '#57F287');
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l9 7-9 7-9-7z"/><path d="M3 17l9 4 9-4"/></svg> Deploy Bot';
+    }, 2000);
+  }, 2200);
+}
+</script>
+</body>
+</html>
